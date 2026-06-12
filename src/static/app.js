@@ -71,10 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function createActivitySlug(activityName) {
-    return activityName
+    const normalizedSlug = activityName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
+
+    return normalizedSlug || "shared-activity";
   }
 
   function getSharedActivitySlug() {
@@ -198,7 +200,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const shareDetails = buildActivityShareDetails(name, details);
     const subject = encodeURIComponent(shareDetails.title);
     const body = encodeURIComponent(`${shareDetails.text}\n\n${shareDetails.url}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    const mailtoLink = document.createElement("a");
+    mailtoLink.href = `mailto:?subject=${subject}&body=${body}`;
+    mailtoLink.style.display = "none";
+    document.body.appendChild(mailtoLink);
+    mailtoLink.click();
+    document.body.removeChild(mailtoLink);
   }
 
   // Function to set day filter
