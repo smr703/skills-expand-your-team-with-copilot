@@ -9,10 +9,10 @@ class DifficultyLevelsTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         init_database()
-        cls.index_html = Path(
-            "/home/runner/work/skills-expand-your-team-with-copilot/"
-            "skills-expand-your-team-with-copilot/src/static/index.html"
-        ).read_text(encoding="utf-8")
+        repo_root = Path(__file__).resolve().parents[1]
+        cls.index_html = (repo_root / "src" / "static" / "index.html").read_text(
+            encoding="utf-8"
+        )
 
     def test_activity_api_returns_optional_difficulty_levels(self):
         activities = get_activities()
