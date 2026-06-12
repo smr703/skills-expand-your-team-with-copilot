@@ -69,19 +69,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getSharedActivitySlug() {
-      const hashMatch = window.location.hash.match(/^#activity=([^&]+)$/);
+      const hashMatch = window.location.hash.match(/^#activity=([^&#]+)/);
       return hashMatch ? decodeURIComponent(hashMatch[1]) : "";
     }
 
     function buildActivityShareDetails(name, details) {
       const shareUrl = new URL(window.location.href);
       shareUrl.hash = `#activity=${createActivitySlug(name)}`;
+      const scheduleText = formatSchedule(details).replace(/[.!?]+$/, "");
 
       return {
         title: `${name} at Mergington High School`,
-        text: `Check out ${name} at Mergington High School. ${details.description} ${formatSchedule(
-          details
-        )}.`,
+        text: `Check out ${name} at Mergington High School. ${details.description} ${scheduleText}.`,
         url: shareUrl.toString(),
       };
     }
