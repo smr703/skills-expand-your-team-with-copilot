@@ -69,18 +69,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getSharedActivitySlug() {
-      const hash = window.location.hash.replace(/^#/, "");
-      if (!hash) {
-        return "";
-      }
-
-      const hashParams = new URLSearchParams(hash);
-      return hashParams.get("activity") || "";
+      const hashMatch = window.location.hash.match(/^#activity=([^&]+)$/);
+      return hashMatch ? decodeURIComponent(hashMatch[1]) : "";
     }
 
     function buildActivityShareDetails(name, details) {
       const shareUrl = new URL(window.location.href);
-      shareUrl.hash = `activity=${createActivitySlug(name)}`;
+      shareUrl.hash = `#activity=${createActivitySlug(name)}`;
 
       return {
         title: `${name} at Mergington High School`,
@@ -149,8 +144,12 @@ document.addEventListener("DOMContentLoaded", () => {
       fallbackInput.style.left = "-9999px";
       document.body.appendChild(fallbackInput);
       fallbackInput.select();
-      document.execCommand("copy");
+      const copied = document.execCommand("copy");
       document.body.removeChild(fallbackInput);
+
+      if (!copied) {
+        throw new Error("Copy command was not successful");
+      }
     }
 
     async function shareActivity(name, details) {
