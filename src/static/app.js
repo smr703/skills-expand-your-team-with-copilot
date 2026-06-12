@@ -63,142 +63,142 @@ document.addEventListener("DOMContentLoaded", () => {
       currentDay = activeDayFilter.dataset.day;
     }
 
-    function createActivitySlug(activityName) {
-      return activityName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
-    }
-
-    function getSharedActivitySlug() {
-      const hashMatch = window.location.hash.match(/^#activity=([^&#]+)/);
-      return hashMatch ? decodeURIComponent(hashMatch[1]) : "";
-    }
-
-    function buildActivityShareDetails(name, details) {
-      const shareUrl = new URL(window.location.href);
-      shareUrl.hash = `#activity=${createActivitySlug(name)}`;
-      const scheduleText = stripTrailingPunctuation(formatSchedule(details));
-
-      return {
-        title: `${name} at Mergington High School`,
-        text: `Check out ${name} at Mergington High School. ${details.description} ${scheduleText}.`,
-        url: shareUrl.toString(),
-      };
-    }
-
-    function setActiveFilterButton(buttons, dataKey, activeValue) {
-      buttons.forEach((button) => {
-        button.classList.toggle("active", button.dataset[dataKey] === activeValue);
-      });
-    }
-
-    function stripTrailingPunctuation(text) {
-      return text.replace(/[.!?]+$/, "");
-    }
-
-    function resetFilters() {
-      currentFilter = "all";
-      searchQuery = "";
-      currentDay = "";
-      currentTimeRange = "";
-      searchInput.value = "";
-
-      setActiveFilterButton(categoryFilters, "category", "all");
-      setActiveFilterButton(dayFilters, "day", "");
-      setActiveFilterButton(timeFilters, "time", "");
-    }
-
-    function focusActivityCard(activitySlug) {
-      if (!activitySlug) {
-        return false;
-      }
-
-      const activityCard = document.querySelector(
-        `[data-activity-slug="${activitySlug}"]`
-      );
-
-      if (!activityCard) {
-        return false;
-      }
-
-      document
-        .querySelectorAll(".activity-card-highlight")
-        .forEach((card) => card.classList.remove("activity-card-highlight"));
-
-      activityCard.classList.add("activity-card-highlight");
-      activityCard.scrollIntoView({ behavior: "smooth", block: "center" });
-
-      setTimeout(() => {
-        activityCard.classList.remove("activity-card-highlight");
-      }, ACTIVITY_HIGHLIGHT_DURATION_MS);
-
-      return true;
-    }
-
-    async function copyText(text) {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        return;
-      }
-
-      const fallbackInput = document.createElement("textarea");
-      fallbackInput.value = text;
-      fallbackInput.setAttribute("readonly", "");
-      fallbackInput.style.position = "absolute";
-      fallbackInput.style.left = OFFSCREEN_POSITION;
-      document.body.appendChild(fallbackInput);
-      fallbackInput.select();
-      const copied = document.execCommand("copy");
-      document.body.removeChild(fallbackInput);
-
-      if (!copied) {
-        throw new Error("Copy command was not successful");
-      }
-    }
-
-    async function shareActivity(name, details) {
-      const shareDetails = buildActivityShareDetails(name, details);
-
-      try {
-        if (navigator.share) {
-          await navigator.share(shareDetails);
-          return;
-        }
-
-        await copyText(shareDetails.url);
-        showMessage(`Share link copied for ${name}.`, "success");
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          showMessage("Unable to share this activity right now.", "error");
-          console.error("Error sharing activity:", error);
-        }
-      }
-    }
-
-    async function copyActivityLink(name, details) {
-      try {
-        const shareDetails = buildActivityShareDetails(name, details);
-        await copyText(shareDetails.url);
-        showMessage(`Link copied for ${name}.`, "success");
-      } catch (error) {
-        showMessage("Unable to copy the share link right now.", "error");
-        console.error("Error copying share link:", error);
-      }
-    }
-
-    function emailActivity(name, details) {
-      const shareDetails = buildActivityShareDetails(name, details);
-      const subject = encodeURIComponent(shareDetails.title);
-      const body = encodeURIComponent(`${shareDetails.text}\n\n${shareDetails.url}`);
-      window.location.href = `mailto:?subject=${subject}&body=${body}`;
-    }
-
     // Initialize time filter
     const activeTimeFilter = document.querySelector(".time-filter.active");
     if (activeTimeFilter) {
       currentTimeRange = activeTimeFilter.dataset.time;
     }
+  }
+
+  function createActivitySlug(activityName) {
+    return activityName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  function getSharedActivitySlug() {
+    const hashMatch = window.location.hash.match(/^#activity=([^&#]+)/);
+    return hashMatch ? decodeURIComponent(hashMatch[1]) : "";
+  }
+
+  function stripTrailingPunctuation(text) {
+    return text.replace(/[.!?]+$/, "");
+  }
+
+  function buildActivityShareDetails(name, details) {
+    const shareUrl = new URL(window.location.href);
+    shareUrl.hash = `#activity=${createActivitySlug(name)}`;
+    const scheduleText = stripTrailingPunctuation(formatSchedule(details));
+
+    return {
+      title: `${name} at Mergington High School`,
+      text: `Check out ${name} at Mergington High School. ${details.description} ${scheduleText}.`,
+      url: shareUrl.toString(),
+    };
+  }
+
+  function setActiveFilterButton(buttons, dataKey, activeValue) {
+    buttons.forEach((button) => {
+      button.classList.toggle("active", button.dataset[dataKey] === activeValue);
+    });
+  }
+
+  function resetFilters() {
+    currentFilter = "all";
+    searchQuery = "";
+    currentDay = "";
+    currentTimeRange = "";
+    searchInput.value = "";
+
+    setActiveFilterButton(categoryFilters, "category", "all");
+    setActiveFilterButton(dayFilters, "day", "");
+    setActiveFilterButton(timeFilters, "time", "");
+  }
+
+  function focusActivityCard(activitySlug) {
+    if (!activitySlug) {
+      return false;
+    }
+
+    const activityCard = document.querySelector(
+      `[data-activity-slug="${activitySlug}"]`
+    );
+
+    if (!activityCard) {
+      return false;
+    }
+
+    document
+      .querySelectorAll(".activity-card-highlight")
+      .forEach((card) => card.classList.remove("activity-card-highlight"));
+
+    activityCard.classList.add("activity-card-highlight");
+    activityCard.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    setTimeout(() => {
+      activityCard.classList.remove("activity-card-highlight");
+    }, ACTIVITY_HIGHLIGHT_DURATION_MS);
+
+    return true;
+  }
+
+  async function copyText(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const fallbackInput = document.createElement("textarea");
+    fallbackInput.value = text;
+    fallbackInput.setAttribute("readonly", "");
+    fallbackInput.style.position = "absolute";
+    fallbackInput.style.left = OFFSCREEN_POSITION;
+    document.body.appendChild(fallbackInput);
+    fallbackInput.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(fallbackInput);
+
+    if (!copied) {
+      throw new Error("Copy command was not successful");
+    }
+  }
+
+  async function shareActivity(name, details) {
+    const shareDetails = buildActivityShareDetails(name, details);
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareDetails);
+        return;
+      }
+
+      await copyText(shareDetails.url);
+      showMessage(`Share link copied for ${name}.`, "success");
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        showMessage("Unable to share this activity right now.", "error");
+        console.error("Error sharing activity:", error);
+      }
+    }
+  }
+
+  async function copyActivityLink(name, details) {
+    try {
+      const shareDetails = buildActivityShareDetails(name, details);
+      await copyText(shareDetails.url);
+      showMessage(`Link copied for ${name}.`, "success");
+    } catch (error) {
+      showMessage("Unable to copy the share link right now.", "error");
+      console.error("Error copying share link:", error);
+    }
+  }
+
+  function emailActivity(name, details) {
+    const shareDetails = buildActivityShareDetails(name, details);
+    const subject = encodeURIComponent(shareDetails.title);
+    const body = encodeURIComponent(`${shareDetails.text}\n\n${shareDetails.url}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   }
 
   // Function to set day filter
