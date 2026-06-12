@@ -45,6 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let searchQuery = "";
   let currentDay = "";
   let currentTimeRange = "";
+  let activitySlugToFocus = null;
+  let hasHandledInitialSharedActivity = false;
   const themeStorageKey = "preferredTheme";
 
   // Authentication state
@@ -56,9 +58,18 @@ document.addEventListener("DOMContentLoaded", () => {
     afternoon: { start: "15:00", end: "18:00" }, // After school hours
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
+  const ACTIVITY_HIGHLIGHT_DURATION_MS = 3000;
+  const OFFSCREEN_POSITION = "-9999px";
 
   // Initialize filters from active elements
   function initializeFilters() {
+    const activeDifficultyFilter = document.querySelector(
+      ".difficulty-filter.active"
+    );
+    if (activeDifficultyFilter) {
+      currentDifficulty = activeDifficultyFilter.dataset.difficulty;
+    }
+
     // Initialize day filter
     const activeDayFilter = document.querySelector(".day-filter.active");
     if (activeDayFilter) {
@@ -70,6 +81,146 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeTimeFilter) {
       currentTimeRange = activeTimeFilter.dataset.time;
     }
+  }
+
+  function createActivitySlug(activityName) {
+    const normalizedSlug = activityName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    return normalizedSlug || "shared-activity";
+  }
+
+  function getSharedActivitySlug() {
+    const hashMatch = window.location.hash.match(/^#activity=([^&#]+)/);
+    return hashMatch ? decodeURIComponent(hashMatch[1]) : "";
+  }
+
+  function stripTrailingPunctuation(text) {
+    return text.replace(/[.!?]+$/, "");
+  }
+
+  function buildActivityShareDetails(name, details) {
+    const shareUrl = new URL(window.location.href);
+    shareUrl.hash = `#activity=${createActivitySlug(name)}`;
+    const scheduleText = stripTrailingPunctuation(formatSchedule(details));
+
+    return {
+      title: `${name} at Mergington High School`,
+      text: `Check out ${name} at Mergington High School. ${details.description} ${scheduleText}.`,
+      url: shareUrl.toString(),
+    };
+  }
+
+  function setActiveFilterButton(buttons, dataKey, activeValue) {
+    buttons.forEach((button) => {
+      button.classList.toggle("active", button.dataset[dataKey] === activeValue);
+    });
+  }
+
+  function resetFilters() {
+    currentFilter = "all";
+    currentDifficulty = "";
+    searchQuery = "";
+    currentDay = "";
+    currentTimeRange = "";
+    searchInput.value = "";
+
+    setActiveFilterButton(categoryFilters, "category", "all");
+    setActiveFilterButton(difficultyFilters, "difficulty", "");
+    setActiveFilterButton(dayFilters, "day", "");
+    setActiveFilterButton(timeFilters, "time", "");
+  }
+
+  function focusActivityCard(activitySlug) {
+    if (!activitySlug) {
+      return false;
+    }
+
+    const activityCard = document.querySelector(
+      `[data-activity-slug="${activitySlug}"]`
+    );
+
+    if (!activityCard) {
+      return false;
+    }
+
+    document
+      .querySelectorAll(".activity-card-highlight")
+      .forEach((card) => card.classList.remove("activity-card-highlight"));
+
+    activityCard.classList.add("activity-card-highlight");
+    activityCard.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    setTimeout(() => {
+      activityCard.classList.remove("activity-card-highlight");
+    }, ACTIVITY_HIGHLIGHT_DURATION_MS);
+
+    return true;
+  }
+
+  async function copyText(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const fallbackInput = document.createElement("textarea");
+    fallbackInput.value = text;
+    fallbackInput.setAttribute("readonly", "");
+    fallbackInput.style.position = "absolute";
+    fallbackInput.style.left = OFFSCREEN_POSITION;
+    document.body.appendChild(fallbackInput);
+    fallbackInput.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(fallbackInput);
+
+    if (!copied) {
+      throw new Error("Copy command was not successful");
+    }
+  }
+
+  async function shareActivity(name, details) {
+    const shareDetails = buildActivityShareDetails(name, details);
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareDetails);
+        return;
+      }
+
+      await copyText(shareDetails.url);
+      showMessage(`Share link copied for ${name}.`, "success");
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        showMessage("Unable to share this activity right now.", "error");
+        console.error("Error sharing activity:", error);
+      }
+    }
+  }
+
+  async function copyActivityLink(name, details) {
+    try {
+      const shareDetails = buildActivityShareDetails(name, details);
+      await copyText(shareDetails.url);
+      showMessage(`Link copied for ${name}.`, "success");
+    } catch (error) {
+      showMessage("Unable to copy the share link right now.", "error");
+      console.error("Error copying share link:", error);
+    }
+  }
+
+  function emailActivity(name, details) {
+    const shareDetails = buildActivityShareDetails(name, details);
+    const subject = encodeURIComponent(shareDetails.title);
+    const body = encodeURIComponent(`${shareDetails.text}\n\n${shareDetails.url}`);
+    const mailtoLink = document.createElement("a");
+    mailtoLink.href = `mailto:?subject=${subject}&body=${body}`;
+    mailtoLink.style.display = "none";
+    document.body.appendChild(mailtoLink);
+    mailtoLink.click();
+    document.body.removeChild(mailtoLink);
   }
 
   // Function to set day filter
@@ -434,6 +585,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Apply search and filter, and handle weekend filter in client
       displayFilteredActivities();
+
+      if (activitySlugToFocus) {
+        if (focusActivityCard(activitySlugToFocus)) {
+          activitySlugToFocus = null;
+        }
+      } else if (!hasHandledInitialSharedActivity) {
+        hasHandledInitialSharedActivity = true;
+        focusActivityCard(getSharedActivitySlug());
+      }
     } catch (error) {
       activitiesList.innerHTML =
         "<p>Failed to load activities. Please try again later.</p>";
@@ -458,11 +618,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       // Apply difficulty filter
-      if (currentDifficulty) {
-        if (details.difficulty_level !== currentDifficulty) {
-          return;
-        }
-      } else if (details.difficulty_level) {
+      if (
+        currentDifficulty &&
+        details.difficulty_level !== currentDifficulty
+      ) {
         return;
       }
 
@@ -518,6 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderActivityCard(name, details) {
     const activityCard = document.createElement("div");
     activityCard.className = "activity-card";
+    activityCard.dataset.activitySlug = createActivitySlug(name);
 
     // Calculate spots and capacity
     const totalSpots = details.max_participants;
@@ -599,6 +759,12 @@ document.addEventListener("DOMContentLoaded", () => {
             .join("")}
         </ul>
       </div>
+      <div class="share-actions">
+        <span class="share-label">Share:</span>
+        <button type="button" class="share-button native-share-button">Share</button>
+        <button type="button" class="share-button copy-link-button">Copy Link</button>
+        <button type="button" class="share-button email-share-button">Email</button>
+      </div>
       <div class="activity-card-actions">
         ${
           currentUser
@@ -633,6 +799,16 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    activityCard
+      .querySelector(".native-share-button")
+      .addEventListener("click", () => shareActivity(name, details));
+    activityCard
+      .querySelector(".copy-link-button")
+      .addEventListener("click", () => copyActivityLink(name, details));
+    activityCard
+      .querySelector(".email-share-button")
+      .addEventListener("click", () => emailActivity(name, details));
 
     activitiesList.appendChild(activityCard);
   }
@@ -729,6 +905,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.target === registrationModal) {
       closeRegistrationModalHandler();
     }
+  });
+
+  window.addEventListener("hashchange", () => {
+    const sharedActivitySlug = getSharedActivitySlug();
+    if (!sharedActivitySlug) {
+      return;
+    }
+
+    activitySlugToFocus = sharedActivitySlug;
+    resetFilters();
+    fetchActivities();
   });
 
   // Create and show confirmation dialog
