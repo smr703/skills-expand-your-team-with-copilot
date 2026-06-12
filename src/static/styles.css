@@ -32,6 +32,32 @@
   --info-light: #d1ecf1;
 }
 
+[data-theme="dark"] {
+  --primary: #8ea2ff;
+  --primary-light: #b8c4ff;
+  --primary-dark: #6b81f0;
+  --primary-text: #101530;
+  --secondary: #ffb357;
+  --secondary-light: #ffc98c;
+  --secondary-dark: #f08a00;
+  --secondary-text: #1b1b1b;
+  --background: #111827;
+  --surface: #1f2937;
+  --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --border: #374151;
+  --border-light: #4b5563;
+  --border-focus: #6b7280;
+  --success: #6ee7b7;
+  --success-light: #064e3b;
+  --warning: #fbbf24;
+  --warning-light: #78350f;
+  --error: #f87171;
+  --error-light: #7f1d1d;
+  --info: #7dd3fc;
+  --info-light: #164e63;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -48,6 +74,7 @@ body {
   padding: 12px;
   background-color: var(--background);
   font-size: 0.9rem;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 header {
@@ -289,13 +316,26 @@ section h3 {
 
 button {
   background-color: var(--primary);
-  color: white;
+  color: var(--primary-text);
   border: none;
   padding: 6px 12px;
   font-size: 0.85rem;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
+}
+
+input,
+textarea,
+select {
+  background-color: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary);
 }
 
 /* Tooltip styles */
@@ -505,7 +545,7 @@ footer {
   height: 100%; /* Make button match input height */
   min-height: 32px; /* Ensure minimum clickable area */
   background: var(--primary);
-  color: white;
+  color: var(--primary-text);
   border: none;
   border-radius: 0 20px 20px 0;
   cursor: pointer;
@@ -562,7 +602,7 @@ footer {
 .day-filter.active,
 .time-filter.active {
   background-color: var(--primary);
-  color: white;
+  color: var(--primary-text);
   border-color: var(--primary-dark);
 }
 
@@ -570,7 +610,7 @@ footer {
 .day-filter:hover,
 .time-filter:hover {
   background-color: var(--primary-light);
-  color: white;
+  color: var(--primary-text);
 }
 
 .time-filters {
@@ -617,6 +657,9 @@ footer {
   position: absolute;
   top: 10px;
   right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 #user-status {
@@ -648,6 +691,10 @@ footer {
 
 .icon-button:hover {
   background-color: rgba(255, 255, 255, 0.3);
+}
+
+#theme-toggle-label {
+  white-space: nowrap;
 }
 
 .user-icon {
