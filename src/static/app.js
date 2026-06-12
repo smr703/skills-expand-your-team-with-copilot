@@ -52,6 +52,8 @@ document.addEventListener("DOMContentLoaded", () => {
     afternoon: { start: "15:00", end: "18:00" }, // After school hours
     weekend: { days: ["Saturday", "Sunday"] }, // Weekend days
   };
+  const ACTIVITY_HIGHLIGHT_DURATION_MS = 3000;
+  const OFFSCREEN_POSITION = "-9999px";
 
   // Initialize filters from active elements
   function initializeFilters() {
@@ -76,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function buildActivityShareDetails(name, details) {
       const shareUrl = new URL(window.location.href);
       shareUrl.hash = `#activity=${createActivitySlug(name)}`;
-      const scheduleText = formatSchedule(details).replace(/[.!?]+$/, "");
+      const scheduleText = stripTrailingPunctuation(formatSchedule(details));
 
       return {
         title: `${name} at Mergington High School`,
@@ -89,6 +91,10 @@ document.addEventListener("DOMContentLoaded", () => {
       buttons.forEach((button) => {
         button.classList.toggle("active", button.dataset[dataKey] === activeValue);
       });
+    }
+
+    function stripTrailingPunctuation(text) {
+      return text.replace(/[.!?]+$/, "");
     }
 
     function resetFilters() {
@@ -125,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       setTimeout(() => {
         activityCard.classList.remove("activity-card-highlight");
-      }, 3000);
+      }, ACTIVITY_HIGHLIGHT_DURATION_MS);
 
       return true;
     }
@@ -140,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
       fallbackInput.value = text;
       fallbackInput.setAttribute("readonly", "");
       fallbackInput.style.position = "absolute";
-      fallbackInput.style.left = "-9999px";
+      fallbackInput.style.left = OFFSCREEN_POSITION;
       document.body.appendChild(fallbackInput);
       fallbackInput.select();
       const copied = document.execCommand("copy");
